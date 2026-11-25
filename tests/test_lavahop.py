@@ -275,6 +275,15 @@ class LavaHopTests(unittest.TestCase):
         sim.hit(); sim.run(2.0); sim.hit()
         self.assertTrue(sim.S.active)
 
+    def test_stays_up_while_dodging(self):
+        random.seed(7)                                       # a run with a 30s+ perfect streak
+        sim = Sim()
+        lava_run(sim, 'phase', 75, 0.2, interval=2.0, stand_first=5)
+        self.assertTrue(sim.S.active, 'turned off while still hopping in lava')
+        self.assertGreater(sim.g.now - sim.S.lastTick, 30)    # really went 30s+ without a hit
+        sim.run(5)                                           # stop jumping, stand outside: off
+        self.assertFalse(sim.S.active)
+
     def test_slash_and_test_mode(self):
         sim = Sim()
         cmd = sim.g.SlashCmdList.LAVAHOP

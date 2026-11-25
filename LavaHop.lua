@@ -517,7 +517,9 @@ local function OnUpdate(_, elapsed)
     local limit = Calibrated() and (math.max(Interval(), FirstDelay()) * 1.6 + 0.4) or 4.5
     if now - since > limit then Deactivate("no tick on the ground") end
   end
-  if S.active and S.lastTick and now - S.lastTick > 30 then Deactivate("30s without a tick") end
+  -- dodging every tick is the goal, so jumping keeps it up; standing on the ground
+  -- past a tick (above) is how it knows you left. Safety net: 2 minutes without a tick.
+  if S.active and S.lastTick and now - S.lastTick > 120 then Deactivate("2 minutes without a tick") end
   Paint(now)
 end
 
