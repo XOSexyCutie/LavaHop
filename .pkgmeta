@@ -1,0 +1,13 @@
+# CurseForge / BigWigs packager config.
+package-as: LavaHop
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - tests
+  - README.md
+  - .pkgmeta
+  - .github
+  - media
