@@ -2,7 +2,7 @@
 ## Title: LavaHop
 ## Notes: Lava jump timer: a bar that shows when to jump so lava ticks land while you're in the air. Learns the timing from your own jumps.
 ## Author: XOSexyCutie
-## Version: 1.0.0
+## Version: 1.0.1
 ## IconTexture: Interface\Icons\Spell_Fire_Volcano
 ## X-License: MIT
 ## X-Curse-Project-ID: 1829748

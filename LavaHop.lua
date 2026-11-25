@@ -9,7 +9,7 @@
 -- and IsFalling() to know whether you are in the air. The tick interval and
 -- whether a jump restarts the lava timer are learned from your own ticks.
 local ADDON = ...
-local VERSION = "1.0.0"
+local VERSION = "1.0.1"
 
 local DEFAULT_INTERVAL = 1.0   -- seconds between lava ticks until measured
 local GRACE = 0.3              -- server/latency slack after a predicted tick
@@ -263,10 +263,6 @@ local function OnMaybeTick(t, source)
   if nt and math.abs(t - nt) <= 0.35 then OnTick(t, source) end
 end
 
-local function TextReliable()      -- has the log text shown lava this session, and isn't hidden now?
-  return S.textAt ~= nil and (S.textSecretAt == nil or S.textSecretAt < S.textAt)
-end
-
 -- Is a gap between two hits a whole number of lava ticks (1-3, so a dodged tick is fine)?
 local function OnRhythm(d, tol, maxK)
   local iv = Interval()
@@ -282,7 +278,6 @@ end
 -- off the rhythm are ignored.
 local function OnCandidate(t, source)
   if S.active then
-    if TextReliable() then return end     -- the log text drives the ticks
     local nt = NextTick(t)
     if not Calibrated() or (nt and math.abs(t - nt) <= 0.35)
         or (S.lastTick and OnRhythm(t - S.lastTick, 0.25, 15)) then
@@ -290,10 +285,6 @@ local function OnCandidate(t, source)
     else
       Debug(string.format("%s: off the lava rhythm, ignored", source))
     end
-    return
-  end
-  if TextReliable() then
-    Debug(source .. ": no lava in the combat log text, ignored")
     return
   end
   if not db.strict then OnTick(t, source); return end
@@ -312,37 +303,6 @@ local function OnCandidate(t, source)
   else
     Debug(string.format("%s: %.2fs after the last one - not the lava rhythm (%.2fs), ignored", source, d, Interval()))
   end
-end
-
--- The Combat Log chat tab is written by Blizzard's own code ("Lava damaged You 611 Fire.").
--- Addons may watch lines being added to it; when that text is readable it names the
--- lava exactly, so flamethrowers and other fire can't be mistaken for it.
-local LAVA_WORD = (STRING_ENVIRONMENTAL_DAMAGE_LAVA ~= nil and STRING_ENVIRONMENTAL_DAMAGE_LAVA) or "Lava"
-local DAMAGED_WORD = (ACTION_ENVIRONMENTAL_DAMAGE ~= nil and ACTION_ENVIRONMENTAL_DAMAGE) or "damaged"
-
-local function OnLogText(text)
-  if not db then return end
-  if not readable(text) then
-    if not S.textSecretAt then Debug("combat log text is hidden from addons - using the lava rhythm") end
-    S.textSecretAt = GetTime()
-    return
-  end
-  if type(text) ~= "string" then return end
-  local plain = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h(.-)|h", "%1")
-  if not plain:find(LAVA_WORD .. " " .. DAMAGED_WORD, 1, true) then return end
-  local me = UnitName("player")
-  local you = (UNIT_YOU ~= nil and UNIT_YOU) or "You"
-  if not (plain:find(" " .. you, 1, true) or (me and plain:find(me, 1, true))) then return end
-  if not S.textAt then Debug("combat log text shows lava - using it, other fire is ignored") end
-  S.textAt = GetTime()
-  OnTick(S.textAt, "combat log text")
-end
-
-local function HookLogText()
-  local cf = COMBATLOG or ChatFrame2
-  if S.textHooked or not cf or not cf.AddMessage or not hooksecurefunc then return end
-  S.textHooked = true
-  hooksecurefunc(cf, "AddMessage", function(_, text) pcall(OnLogText, text) end)
 end
 
 ---------------------------------------------------------------- display
@@ -527,10 +487,6 @@ end
 local ev = CreateFrame("Frame")
 
 local function OnEvent(_, event, ...)
-  if event == "PLAYER_LOGIN" or (event == "ADDON_LOADED" and ... == "Blizzard_CombatLog") then
-    HookLogText()
-    return
-  end
   if event == "ADDON_LOADED" then
     if ... ~= ADDON then return end
     LavaHopDB = LavaHopDB or {}
@@ -587,7 +543,6 @@ ev:SetScript("OnEvent", OnEvent)
 ev:RegisterEvent("ADDON_LOADED")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("PLAYER_DEAD")
-ev:RegisterEvent("PLAYER_LOGIN")
 pcall(ev.RegisterEvent, ev, "MIRROR_TIMER_START")
 if ev.RegisterUnitEvent then
   pcall(ev.RegisterUnitEvent, ev, "UNIT_COMBAT", "player")
@@ -609,10 +564,6 @@ local function Status()
     (db.interval > 0) and " (set by you)" or (Calibrated() and " (measured)" or " (guess, not measured yet)"),
     FirstDelay(), Model(), db.model == "auto" and " (auto)" or "",
     db.sound and ("on (" .. db.soundId .. ")") or "off"))
-  Print("Lava detection: " .. (TextReliable() and "combat log text (exact)"
-    or (S.textSecretAt and "lava rhythm (combat log text is hidden from addons)")
-    or (S.textHooked and "lava rhythm (no lava seen in the Combat Log tab yet this session)")
-    or "lava rhythm (no Combat Log tab found)"))
 end
 
 local function Help()

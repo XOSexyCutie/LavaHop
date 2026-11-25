@@ -40,13 +40,6 @@ local function obj()
   return setmetatable(o, mt)
 end
 fonts, frames = {}, {}
-ChatFrame2 = { AddMessage = function(self, text) end }
-COMBATLOG = ChatFrame2
-function hooksecurefunc(obj, name, fn)
-  local orig = obj[name]
-  obj[name] = function(...) local r = orig(...); fn(...); return r end
-end
-function UnitName() return "Tester" end
 function CreateFrame() local f = obj(); frames[#frames + 1] = f; return f end
 """
 
@@ -63,7 +56,6 @@ class Sim:
         self.g = g
         self.ev = g.frames[1]          # event frame (the box is built on ADDON_LOADED)
         self.fire('ADDON_LOADED', 'LavaHop')
-        self.fire('PLAYER_LOGIN')
         self.big = g.fonts[1]
 
     def fire(self, event, *args):
@@ -242,37 +234,6 @@ class LavaHopTests(unittest.TestCase):
         self.assertEqual(sim.S.hits, n)
         sim.g.LavaHopDB.strict = False
         sim.run(6); sim.hit()
-        self.assertTrue(sim.S.active)
-
-    def log(self, sim, text):
-        sim.g.ChatFrame2.AddMessage(sim.g.ChatFrame2, text)
-
-    def test_combat_log_text_names_the_lava(self):
-        sim = Sim()
-        lava = '|cffff8000Lava|r damaged You 611 Fire.'
-        # flamethrower hits on the beat, before any lava text: rhythm mode would start
-        self.log(sim, '|Hunit:x|hIronhand Guardian|h Gout of Flame hit You 183 Fire.')
-        self.log(sim, lava)                       # first lava line: starts at once
-        self.assertTrue(sim.S.active)
-        sim.run(2.0); self.log(sim, lava)
-        n = sim.S.hits
-        self.assertEqual(n, 2)
-        sim.run(1.0); sim.hit()                   # Gout of Flame (UNIT_COMBAT fire): ignored now
-        self.assertEqual(sim.S.hits, n)
-        sim.run(8)
-        self.assertFalse(sim.S.active)
-        for gap in (2.0, 2.0, 2.0):               # flamethrower exactly on the lava beat
-            sim.hit(); sim.run(gap)
-        self.assertFalse(sim.S.active)
-        self.log(sim, 'Lava Spawn hits You 50 Fire.')   # a mob called Lava..., not lava
-        self.assertFalse(sim.S.active)
-        self.log(sim, '12:01:02.345  Lava damaged Tester 611 Fire.')
-        self.assertTrue(sim.S.active)
-
-    def test_hidden_log_text_falls_back_to_rhythm(self):
-        sim = Sim()
-        self.log(sim, 'SECRET')
-        sim.hit(); sim.run(2.0); sim.hit()
         self.assertTrue(sim.S.active)
 
     def test_stays_up_while_dodging(self):

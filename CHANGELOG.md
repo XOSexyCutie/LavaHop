@@ -1,5 +1,9 @@
 # LavaHop Changelog
 
+## 1.0.1
+
+- Removed reading lava from the Combat Log chat tab: WoW Forever hides that text from addons, so it never worked. Lava is recognised by its steady rhythm, as before.
+
 ## 1.0.0
 
 First release.
@@ -9,6 +13,6 @@ First release.
 - Measures the lava's tick interval and whether jumping restarts the lava timer.
 - Learns the jump timing that dodges from your own jumps, which covers ping and the game showing hits late. What it learns is saved.
 - Tells you after each hit how early you jumped. Counts dodges and hits.
-- Lava only: reads "Lava damaged You" from the Combat Log chat tab when it can, so the bar starts on the first tick and flamethrowers and other fire are ignored. Otherwise the bar starts when a second fire hit lands on the lava's rhythm, so campfires, fire traps and flamethrowers don't set it off (`/lava strict off` for any fire).
+- Lava only: the bar starts when a second fire hit lands on the lava's rhythm, so campfires, fire traps and flamethrowers don't set it off (`/lava strict off` for any fire).
 - Works without the combat log (WoW Forever): uses fire hits and health drops outside of combat, plus whether you're in the air.
 - Commands: `/lava` (also `/lavahop`), including `test`, `stats`, `shift`, `strict`, `forget`, `lock`/`unlock` and `sound`.
