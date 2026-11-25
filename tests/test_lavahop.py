@@ -85,6 +85,8 @@ def lava_run(sim, server, total, jump_lead, interval=1.0, airtime=0.7, jump=True
     if sim.g.falling:              # land from the previous run first
         sim.g.falling = False
         sim.step()
+    if sim.S.active:               # walk out of the old lava before the new run
+        sim.run(6)
     t_end = sim.g.now + total
     t_jump = sim.g.now + stand_first
     nxt = sim.g.now + interval
@@ -213,11 +215,33 @@ class LavaHopTests(unittest.TestCase):
         self.assertLessEqual(h, 3, f'hit {h} times in 35s following the zone {early:.2f}-{late:.2f}')
         self.assertGreaterEqual(dodges_learned(sim) - d0, 12)
 
+    def test_only_lava_rhythm_starts_it(self):
+        sim = Sim()
+        for _ in range(3):                       # learn real lava: 2.0s ticks
+            sim.hit(); sim.run(2.0)
+        sim.run(5)
+        self.assertFalse(sim.S.active)
+        sim.hit(); sim.run(0.5)                  # one campfire hit
+        self.assertFalse(sim.S.active)
+        for gap in (1.3, 0.8, 1.1, 2.6):         # flamethrower-style bursts, off the beat
+            sim.run(gap); sim.hit()
+            self.assertFalse(sim.S.active, f'started on a {gap}s gap')
+        sim.run(5)
+        sim.hit(); sim.run(2.0); sim.hit()       # back in lava
+        self.assertTrue(sim.S.active)
+        n = sim.S.hits
+        sim.run(0.7); sim.hit()                  # stray fire while in lava: ignored
+        self.assertEqual(sim.S.hits, n)
+        sim.g.LavaHopDB.strict = False
+        sim.run(6); sim.hit()
+        self.assertTrue(sim.S.active)
+
     def test_slash_and_test_mode(self):
         sim = Sim()
         cmd = sim.g.SlashCmdList.LAVAHOP
         for c in ['', 'shift 0.1', 'interval 1.2', 'interval auto', 'model phase', 'model auto',
-                  'sound off', 'sound 8959', 'lock', 'unlock', 'scale 1.3', 'debug', 'forget']:
+                  'sound off', 'sound 8959', 'lock', 'unlock', 'scale 1.3', 'debug', 'forget',
+                  'strict off', 'strict on']:
             cmd(c)
         self.assertAlmostEqual(sim.g.LavaHopDB.shift, 0.1); cmd('shift 0')
         cmd('stats')

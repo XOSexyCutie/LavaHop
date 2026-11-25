@@ -11,6 +11,7 @@ Built for **WoW Forever**, where WeakAuras no longer work and addons can't read 
 - **Jump bar:** a white marker slides from left to right toward the red line, which is the next lava tick. Jump while the marker is in the **green zone**.
 - **Beep and "JUMP!":** these come a reaction time ahead of the middle of the zone, so jumping when you hear the beep puts you in the zone. You can also time the jump off the marker, the same way you would a cast bar.
 - **Learns the tick rhythm:** the first two ticks after you step into lava measure how often the lava ticks. Take those two standing still.
+- **Lava only:** lava ticks on a steady beat and other fire doesn't. So the bar only starts when a second fire hit lands on the lava's rhythm, and while it's up, fire hits off the rhythm are ignored. Campfires, fire traps and things like the flamethrowers before Magmus don't set it off. The cost is that the bar appears on your second lava tick instead of the first. `/lava strict off` makes any fire start it.
 - **Learns your timing:** every jump is recorded by how long before the tick you took off and whether that tick hit you. After 8 jumps the green zone moves to the middle of the timings that actually dodge. This also corrects for your ping and for the game showing hits slightly late.
 - **Remembers:** everything it learns is saved, so it's ready from the first tick next time.
 - **Feedback:** after each hit it tells you how early you jumped, or that you were on the ground. The bottom line counts your dodges and hits.
@@ -34,6 +35,7 @@ Jumping can only dodge lava where your feet actually leave it, so knee-deep lava
 | `/lava forget` | Clear everything it learned and start over |
 | `/lava interval auto\|<seconds>` | Set the tick interval by hand instead of measuring it |
 | `/lava model auto\|reset\|phase` | Whether a jump restarts the lava timer (auto-detected) |
+| `/lava strict on\|off` | On (default): lava only. Off: any fire hit starts the bar |
 | `/lava on` / `/lava off` | Turn it on or off |
 | `/lava debug` | Print every signal it sees, for bug reports |
 
@@ -44,7 +46,7 @@ Addons on Forever can't read the combat log, so LavaHop uses what the client sti
 - your health dropping outside of combat
 - whether you're in the air
 
-In combat, a hit only counts as lava if it lands on the lava's rhythm.
+A hit only counts as lava if it lands on the lava's rhythm.
 
 ## Feedback
 

@@ -18,7 +18,7 @@ local REACT = 0.2              -- typical reaction time to a sound / text cue
 
 local DEFAULTS = {
   enabled = true, shift = 0, interval = 0, model = "auto",
-  sound = true, soundId = 856, locked = false, scale = 1, debug = false,
+  sound = true, soundId = 856, locked = false, scale = 1, debug = false, strict = true,
 }
 
 local db
@@ -60,7 +60,7 @@ local function ResetState()
   S.beepedFor = nil
   S.predAtJump = nil
   S.flash, S.flashUntil = nil, 0
-  S.weakAt = nil
+  S.armAt = nil
   S.takeoff = nil
   S.note, S.noteUntil = nil, 0
   S.jumpEval, S.pendingDodges = nil, {}
@@ -263,13 +263,46 @@ local function OnMaybeTick(t, source)
   if nt and math.abs(t - nt) <= 0.35 then OnTick(t, source) end
 end
 
--- Health drop out of combat: two drops at a lava-like spacing start the timer.
-local function OnWeakTick(t, source)
-  if S.active then OnTick(t, source); return end
-  if S.weakAt and t - S.weakAt >= 0.4 and t - S.weakAt <= 3 then
-    OnTick(S.weakAt, source); OnTick(t, source)
+-- Is a gap between two hits a whole number of lava ticks (1-3, so a dodged tick is fine)?
+local function OnRhythm(d, tol, maxK)
+  local iv = Interval()
+  tol = tol or math.max(0.15, 0.06 * iv)
+  local k = math.floor(d / iv + 0.5)
+  if k < 1 or k > (maxK or 3) then return false end
+  return math.abs(d - k * iv) <= tol + 0.01 * k      -- a little drift per tick
+end
+
+-- A fire hit / health drop out of combat. Lava ticks on a steady beat; other fire
+-- (campfires, flamethrowers, fire patches) doesn't. So one hit only arms the timer,
+-- and it starts when a second hit lands on the lava rhythm. While running, hits
+-- off the rhythm are ignored.
+local function OnCandidate(t, source)
+  if S.active then
+    local nt = NextTick(t)
+    if not Calibrated() or (nt and math.abs(t - nt) <= 0.35)
+        or (S.lastTick and OnRhythm(t - S.lastTick, 0.25, 15)) then
+      OnTick(t, source)
+    else
+      Debug(string.format("%s: off the lava rhythm, ignored", source))
+    end
+    return
   end
-  S.weakAt = t
+  if not db.strict then OnTick(t, source); return end
+  local a = S.armAt
+  S.armAt = t
+  if not a then
+    Debug(source .. ": waiting for a second hit on the lava rhythm")
+    return
+  end
+  local d = t - a
+  local ok
+  if Calibrated() then ok = OnRhythm(d) else ok = d >= 0.4 and d <= 3 end
+  if ok then
+    S.armAt = nil
+    OnTick(a, source); OnTick(t, source)
+  else
+    Debug(string.format("%s: %.2fs after the last one - not the lava rhythm (%.2fs), ignored", source, d, Interval()))
+  end
 end
 
 ---------------------------------------------------------------- display
@@ -481,7 +514,7 @@ local function OnEvent(_, event, ...)
     Debug(string.format("UNIT_COMBAT %s amount=%s school=%s%s",
       readable(action) and action or "?", readable(amount) and tostring(amount) or "secret",
       known and tostring(school) or "secret", UnitAffectingCombat("player") and " (in combat)" or ""))
-    if fire and not UnitAffectingCombat("player") then OnTick(now, "fire hit")
+    if fire and not UnitAffectingCombat("player") then OnCandidate(now, "fire hit")
     elseif fire or not known then OnMaybeTick(now, "hit") end
   elseif event == "UNIT_HEALTH" then
     local unit = ...
@@ -490,7 +523,7 @@ local function OnEvent(_, event, ...)
     if not readable(h) then S.lastHealth = nil; return end
     if S.lastHealth and h < S.lastHealth and not UnitAffectingCombat("player") and not UnitIsDeadOrGhost("player") then
       Debug("health drop " .. (S.lastHealth - h))
-      OnWeakTick(now, "health")
+      OnCandidate(now, "health")
     end
     S.lastHealth = h
   elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -534,6 +567,7 @@ end
 local function Help()
   Status()
   Print("/lava on | off - enable or disable")
+  Print("/lava strict on | off - on: only lava (needs 2 hits on the lava rhythm), off: any fire")
   Print("/lava shift 0.1 - move the green zone earlier (negative = later)")
   Print("/lava interval auto | 1.0 - tick interval (auto = measured)")
   Print("/lava model auto | reset | phase - does a jump restart the lava timer?")
@@ -587,6 +621,9 @@ SlashCmdList.LAVAHOP = function(msg)
     Print(string.format("green zone: %.2f-%.2fs before the tick%s", e, l, LearnedZone() and " (learned)" or " (starting guess)"))
   elseif cmd == "forget" then
     ResetLearning(); Print("forgot the measured timings.")
+  elseif cmd == "strict" and (arg == "on" or arg == "off") then
+    db.strict = (arg == "on")
+    Print(db.strict and "lava only: starts after 2 hits on the lava rhythm." or "any fire hit starts the bar.")
   elseif cmd == "debug" then
     db.debug = not db.debug; Print("debug " .. (db.debug and "on" or "off") .. ".")
   else
