@@ -9,7 +9,7 @@
 -- and IsFalling() to know whether you are in the air. The tick interval and
 -- whether a jump restarts the lava timer are learned from your own ticks.
 local ADDON = ...
-local VERSION = "1.0.1"
+local VERSION = "1.0.0"
 
 local DEFAULT_INTERVAL = 1.0   -- seconds between lava ticks until measured
 local GRACE = 0.3              -- server/latency slack after a predicted tick

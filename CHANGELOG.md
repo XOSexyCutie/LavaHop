@@ -1,9 +1,5 @@
 # LavaHop Changelog
 
-## 1.0.1
-
-- Removed reading lava from the Combat Log chat tab: WoW Forever hides that text from addons, so it never worked. Lava is recognised by its steady rhythm, as before.
-
 ## 1.0.0
 
 First release.
