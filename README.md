@@ -11,7 +11,7 @@ Built for **WoW Forever**, where WeakAuras no longer work and addons can't read 
 - **Jump bar:** a white marker slides from left to right toward the red line, which is the next lava tick. Jump while the marker is in the **green zone**.
 - **Beep and "JUMP!":** these come a reaction time ahead of the middle of the zone, so jumping when you hear the beep puts you in the zone. You can also time the jump off the marker, the same way you would a cast bar.
 - **Learns the tick rhythm:** the first two ticks after you step into lava measure how often the lava ticks. Take those two standing still.
-- **Lava only:** lava ticks on a steady beat and other fire doesn't. So the bar only starts when a second fire hit lands on the lava's rhythm, and while it's up, fire hits off the rhythm are ignored. Campfires, fire traps and things like the flamethrowers before Magmus shouldn't set it off. The cost is that the bar appears on your second lava tick instead of the first. `/lava strict off` makes any fire start it.
+- **Lava only:** if you have a Combat Log chat tab, LavaHop watches it for "Lava damaged You" lines. Those name the lava exactly, so the bar starts on the first tick and nothing else sets it off. Without that text, it falls back to rhythm: lava ticks on a steady beat and other fire doesn't. So the bar only starts when a second fire hit lands on the lava's rhythm, and while it's up, fire hits off the rhythm are ignored. Campfires, fire traps and things like the flamethrowers before Magmus shouldn't set it off. The cost is that the bar appears on your second lava tick instead of the first. `/lava strict off` makes any fire start it.
 - **Learns your timing:** every jump is recorded by how long before the tick you took off and whether that tick hit you. After 8 jumps the green zone moves to the middle of the timings that actually dodge. This also corrects for your ping and for the game showing hits slightly late.
 - **Remembers:** everything it learns is saved, so next time it doesn't need to measure again.
 - **Feedback:** after each hit it tells you how early you jumped, or that you were on the ground. The bottom line counts your dodges and hits.
@@ -41,7 +41,8 @@ Jumping can only dodge lava where your feet actually leave it, so knee-deep lava
 
 ## How it detects lava
 
-Addons on Forever can't read the combat log, so LavaHop uses what the client still allows:
+Addons on Forever can't read the combat log data, so LavaHop uses what the client still allows:
+- the "Lava damaged You" lines Blizzard writes into the Combat Log chat tab, when that text is readable
 - fire damage hitting you outside of combat
 - your health dropping outside of combat
 - whether you're in the air
