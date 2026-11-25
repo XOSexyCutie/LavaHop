@@ -5,6 +5,7 @@
 ## Version: 1.0.0
 ## IconTexture: Interface\Icons\Spell_Fire_Volcano
 ## X-License: MIT
+## X-Curse-Project-ID: 1829748
 ## X-Category: Combat
 ## SavedVariables: LavaHopDB
 
